@@ -20,11 +20,13 @@ public class BallBehavior : MonoBehaviour
     
     [SerializeField] private CameraShake cameraShake;
 
+    private AudioSource audio;
     private int currentColor = 0;
     private Renderer sphereRenderer;
 
     [HideInInspector] public Rigidbody rb;
     [HideInInspector] public static bool Play = true;
+    
     private static readonly int Color1 = Shader.PropertyToID("_Color");
 
     #endregion
@@ -32,9 +34,11 @@ public class BallBehavior : MonoBehaviour
     #region Init
     private void Start()
     {
-        score.GetComponent<ScoreHandler>().UpdateScore();
+        audio = GetComponent<AudioSource>();
         sphereRenderer = GetComponent<Renderer>();
         rb = GetComponent<Rigidbody>();
+        
+        score.GetComponent<ScoreHandler>().UpdateScore();
         ballDirection = Random.Range(0f, 1f) < 0.5 ? Direction.Left : Direction.Right;
         
         ResetBallPosition();
@@ -104,13 +108,22 @@ public class BallBehavior : MonoBehaviour
             ballDirection = player == Player.Player1 ? Direction.Left : Direction.Right;
             StartCoroutine(OnPlayerLose());
         }
-            
-        
+
+        else
+            audio.Play();
+
         var velocityMagnitude = velocity.magnitude;
         // reflect function gets the normal angle of the collision
-        var direction = Vector3.Reflect(velocity.normalized, collision.contacts[0].normal);
-        rb.velocity = direction * Mathf.Max(velocityMagnitude, 0f);
+        Vector3 direction = Vector3.Reflect(velocity.normalized, collision.contacts[0].normal);
+        Vector3 newVelocity = direction * Mathf.Max(velocityMagnitude, 0f);
         
+        rb.velocity = newVelocity.y switch
+        {
+            < 0 and > -10 => new Vector2(-10, -10),
+            > 0 and < 10 => new Vector2(10, 10),
+            _ => newVelocity
+        };
+
         // increase speed if touch a paddle
         if (collision.gameObject.CompareTag("Paddle"))
             OnPaddleCollision();

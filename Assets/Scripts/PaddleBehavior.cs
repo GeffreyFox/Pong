@@ -4,7 +4,8 @@ public class PaddleBehavior : MonoBehaviour
 {
     #region Variables
     
-    [SerializeField] private float unitsPerSeconds = 20f;
+    [SerializeField] private float unitsPerSeconds = 50;
+    [SerializeField] private bool isLeftPaddle;
     private Rigidbody rb;
     
     #endregion
@@ -18,32 +19,17 @@ public class PaddleBehavior : MonoBehaviour
     #region Methods
     void FixedUpdate()
     {
-        float horizontalValue = Input.GetAxis("Horizontal");
-        Vector3 force = Vector3.right * horizontalValue * unitsPerSeconds;
+        float leftValue = Input.GetAxis("LeftPaddle");
+        float rightValue = Input.GetAxis("RightPaddle");
+        
+        Vector3 force = Vector3.right * (isLeftPaddle ? rightValue : leftValue) * unitsPerSeconds * Time.deltaTime;
 
-        rb.AddForce(force);
+        // change of direction
+        if (rb.velocity.x < 0 && force.x > 0 || rb.velocity.x > 0 && force.x < 0)
+            rb.velocity = Vector3.zero;
+        
+        rb.velocity = force;
     }
     
     #endregion
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        /*BoxCollider boxCollider = GetComponent<BoxCollider>();
-        Bounds bounds = boxCollider.bounds;
-        
-        float minX = bounds.min.x;
-        float maxX = bounds.max.x;
-
-        float contactX = ball.contacts[0].point.x;
-        
-        Debug.Log($"{minX} - {maxX} - {contactX}");
-
-        // TODO: check if rotation 60 or -60 if the sphere is more on the right or on the left
-        
-        Quaternion rotation = Quaternion.Euler(0,0,-60);
-        Vector3 bounceDirection = rotation * Vector3.up;
-        
-        /*Rigidbody rb = ball.rigidbody;
-        rb.AddForce(new Vector3(acceleration,acceleration,acceleration), ForceMode.Acceleration);*/
-    }
 }

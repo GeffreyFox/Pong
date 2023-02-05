@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -10,14 +11,28 @@ public class ScoreHandler : MonoBehaviour
  
     [SerializeField] private int scoreP1 = 0;
     [SerializeField] private int scoreP2 = 0;
-    
     [SerializeField] private int pointsToWin = 11;
     
+    [SerializeField] private AudioClip winSFX;
+    [SerializeField] private AudioClip scoreSFX;
+    
+    private AudioSource audioSource;
+
     #endregion
 
+    #region Init
+
+    private void Awake()
+        => audioSource = GetComponent<AudioSource>();
+
+    #endregion
+    
     #region Methods
     private void OnWin(Player winner)
     {
+        audioSource.clip = winSFX;
+        audioSource.Play();
+        
         gameFinish.GetComponentInChildren<TextMeshProUGUI>().text = 
             $"Game Over,\n {(winner == Player.Player2 ? "Left" : "Right")} Paddle Wins";
         
@@ -42,6 +57,12 @@ public class ScoreHandler : MonoBehaviour
                 BallBehavior.Play = false;
                 OnWin(Player.Player2);
             }
+
+            else
+            {
+                audioSource.clip = scoreSFX;
+                audioSource.Play();
+            }
         }
 
         else
@@ -51,6 +72,12 @@ public class ScoreHandler : MonoBehaviour
             {
                 BallBehavior.Play = false;
                 OnWin(Player.Player1);
+            }
+
+            else
+            {
+                audioSource.clip = scoreSFX;
+                audioSource.Play();
             }
         }
         
