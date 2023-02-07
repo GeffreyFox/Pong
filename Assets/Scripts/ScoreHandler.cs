@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 
@@ -57,14 +56,12 @@ public class ScoreHandler : MonoBehaviour
                 BallBehavior.Play = false;
                 OnWin(Player.Player2);
             }
-
             else
             {
                 audioSource.clip = scoreSFX;
                 audioSource.Play();
             }
         }
-
         else
         {
             scoreText.text = scoreP2 + " - " + ++scoreP1;
@@ -73,14 +70,12 @@ public class ScoreHandler : MonoBehaviour
                 BallBehavior.Play = false;
                 OnWin(Player.Player1);
             }
-
             else
             {
                 audioSource.clip = scoreSFX;
                 audioSource.Play();
             }
         }
-        
         Debug.Log($"Score : {scoreText.text}");
     }
     #endregion
