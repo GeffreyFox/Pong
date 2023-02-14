@@ -23,11 +23,6 @@ public class PaddleBehavior : MonoBehaviour
         float rightValue = Input.GetAxis("RightPaddle");
         
         Vector3 force = Vector3.right * (isLeftPaddle ? rightValue : leftValue) * unitsPerSeconds * Time.deltaTime;
-
-        // change of direction
-        if (rb.velocity.x < 0 && force.x > 0 || rb.velocity.x > 0 && force.x < 0)
-            rb.velocity = Vector3.zero;
-        
         rb.velocity = force;
     }
     

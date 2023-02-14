@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class BallBehavior : MonoBehaviour
 {
@@ -7,25 +9,27 @@ public class BallBehavior : MonoBehaviour
     
     [SerializeField] public float speed = 500;
     [SerializeField] private float acceleration = 1.1f;
-    private Vector3 velocity;
-    
+
     [SerializeField] private Direction ballDirection;
     [SerializeField] private Vector2 initialPos;
     [SerializeField] private GameObject score;
     
-    [SerializeField] private Color color1;
-    [SerializeField] private Color color2;
-    [SerializeField] private Color color3;
-    [SerializeField] private Color color4;
+    [SerializeField] private Color[] colors;
     
+    [SerializeField] private AudioClip ballBounce;
+    [SerializeField] private AudioClip ballPowerUp;
+
     [SerializeField] private CameraShake cameraShake;
 
     private AudioSource audio;
-    private int currentColor = 0;
+    
     private Renderer sphereRenderer;
+    
+    private Vector3 velocity;
 
     [HideInInspector] public Rigidbody rb;
-    [HideInInspector] public static bool Play = true;
+    
+    public static bool Play = true;
     
     private static readonly int Color1 = Shader.PropertyToID("_Color");
 
@@ -62,12 +66,17 @@ public class BallBehavior : MonoBehaviour
     private void StartMovement()
         => rb.AddForce(new Vector2(1, ballDirection == Direction.Left ? -1f : 1f) * speed);
 
-    private void OnPaddleCollision()
-        => rb.velocity *= acceleration;
+    private void OnPaddleCollision(float pitch)
+    {
+        rb.velocity *= acceleration;
+        audio.pitch += pitch;
+        audio.Play();
+    }
 
     private IEnumerator OnPlayerLose()
     {
         ResetBallPosition();
+        cameraShake.ChangeBackground();
         yield return new WaitForSeconds(2);
         
         // if game is not over
@@ -77,28 +86,21 @@ public class BallBehavior : MonoBehaviour
 
     private void ChangeColor()
     {
-        currentColor = (currentColor + 1) % 4;
-        switch (currentColor)
-        {
-            case 0:
-                sphereRenderer.material.SetColor(Color1, color1);
-                break;
-            case 1:
-                sphereRenderer.material.SetColor(Color1, color2);
-                break;
-            case 2:
-                sphereRenderer.material.SetColor(Color1, color3);
-                break;
-            case 3:
-                sphereRenderer.material.SetColor(Color1, color4);
-                break;
-        }
+        Color newColor = colors[Random.Range(0, colors.Length)];
+        Color color = sphereRenderer.material.color;
+        
+        while (newColor == color)
+            newColor = colors[Random.Range(0, colors.Length)];
+
+        sphereRenderer.material.SetColor(Color1, newColor);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         ChangeColor();
-        StartCoroutine(cameraShake.Shake(0.1f, 0.5f));
+        StartCoroutine(cameraShake.Shake(0.05f, 0.3f));
+        audio.clip = ballBounce;
+        audio.pitch = 1;
         
         if (collision.gameObject.CompareTag("Lose"))
         {
@@ -107,10 +109,8 @@ public class BallBehavior : MonoBehaviour
 
             ballDirection = player == Player.Player1 ? Direction.Left : Direction.Right;
             StartCoroutine(OnPlayerLose());
+            return;
         }
-
-        else
-            audio.Play();
 
         var velocityMagnitude = velocity.magnitude;
         // reflect function gets the normal angle of the collision
@@ -126,7 +126,24 @@ public class BallBehavior : MonoBehaviour
 
         // increase speed if touch a paddle
         if (collision.gameObject.CompareTag("Paddle"))
-            OnPaddleCollision();
+        {
+            var pitch = Math.Abs(collision.contacts[0].otherCollider.bounds.center.x - collision.contacts[0].point.x) 
+                        / collision.contacts[0].otherCollider.bounds.extents.x;
+            
+            OnPaddleCollision(pitch);
+        }
+
+        else
+        {
+            // PowerUp random change speed
+            if (Random.Range(0f, 1f) < 0.1f)
+            {
+                audio.clip = ballPowerUp;
+                rb.velocity *= Random.Range(0.8f, 1.2f) * (Random.Range(0f, 1f) < 0.5f ? -1 : 1);
+            }
+            
+            audio.Play();
+        }
     }
 
     #endregion

@@ -1,9 +1,15 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class CameraShake : MonoBehaviour
 {
+    private Camera cam;
+    [SerializeField] private Color[] colors;
+
+    private void Awake()
+        => cam = GetComponent<Camera>();
+
     #region Methods
     public IEnumerator Shake(float duration, float shaking)
     {
@@ -21,6 +27,15 @@ public class CameraShake : MonoBehaviour
         }
         
         transform.position = camPos;
+    }
+
+    public void ChangeBackground()
+    {
+        Color newColor = colors[Random.Range(0, colors.Length)];
+        while (newColor == cam.backgroundColor)
+            newColor = colors[Random.Range(0, colors.Length)];
+        
+        cam.backgroundColor = newColor;
     }
     
     #endregion

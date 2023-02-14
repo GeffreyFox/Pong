@@ -1,4 +1,7 @@
+using System;
+using System.Collections;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class ScoreHandler : MonoBehaviour
@@ -15,35 +18,70 @@ public class ScoreHandler : MonoBehaviour
     [SerializeField] private AudioClip winSFX;
     [SerializeField] private AudioClip scoreSFX;
     
+    [SerializeField] private HighScore highScore;
+    [SerializeField] private TextMeshProUGUI textHighScore;
+    
     private AudioSource audioSource;
+    private PaddleModifier paddleModifier;
 
     #endregion
 
     #region Init
 
     private void Awake()
-        => audioSource = GetComponent<AudioSource>();
+    {
+        textHighScore.text = highScore.text;
+        paddleModifier = GetComponent<PaddleModifier>();
+        audioSource = GetComponent<AudioSource>();
+    }
 
     #endregion
     
     #region Methods
     private void OnWin(Player winner)
     {
+        int diff = Math.Abs(scoreP1 - scoreP2);
+        if (diff > highScore.diff)
+        {
+            highScore.diff = diff;
+            highScore.highScore = scoreP2 + " - " + scoreP1;
+            highScore.text = "High score: " + highScore.highScore;
+        }
+        
         audioSource.clip = winSFX;
         audioSource.Play();
         
         gameFinish.GetComponentInChildren<TextMeshProUGUI>().text = 
             $"Game Over,\n {(winner == Player.Player2 ? "Left" : "Right")} Paddle Wins";
         
-        Debug.Log(gameFinish.GetComponentInChildren<TextMeshProUGUI>().text);
-        
         gameFinish.SetActive(true);
+    }
+
+    IEnumerator TextEffect()
+    {
+        scoreText.fontStyle = FontStyles.Bold;
+        scoreText.color = Color.red;
+        bool decreasing = false;
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 10; j++)
+            {
+                scoreText.fontSize = decreasing ? scoreText.fontSize - 1 : scoreText.fontSize + 1;
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            decreasing = true;
+        }
+        
+        scoreText.fontStyle = FontStyles.Normal;
+        scoreText.color = Color.white;  
     }
     
     public void UpdateScore()
     {
         (scoreP1, scoreP2) = (0,0);
         scoreText.text = scoreP2 + " - " + scoreP1;
+        paddleModifier.ChangePaddleSize(scoreP1, scoreP2);
     }
 
     public void UpdateScore(Player player)
@@ -76,7 +114,9 @@ public class ScoreHandler : MonoBehaviour
                 audioSource.Play();
             }
         }
-        Debug.Log($"Score : {scoreText.text}");
+        
+        paddleModifier.ChangePaddleSize(scoreP1, scoreP2);
+        StartCoroutine(TextEffect());
     }
     #endregion
 }
